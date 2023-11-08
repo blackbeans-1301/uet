@@ -1,2 +1,0 @@
-# uet
-for uet courses
