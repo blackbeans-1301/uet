@@ -1,6 +1,17 @@
 JAVAC = javac
+JAVAR = java
 
-CLIENT_SRC = Client/client.java
-SERVER_SRC = Server/server.java
+CLIENT_SRC = Client/Client.java
+SERVER_SRC = Server/Server.java
 
-CLIENT_DEST = Client/client.class
+client: 
+	$(JAVAC) $(CLIENT_SRC)
+	$(JAVAR) Client/Client
+
+server:
+	$(JAVAC) $(SERVER_SRC)
+	$(JAVAR) ./Server/Server
+
+clean:
+	rm -f ./Client/*.class
+	rm -f ./Server/*.class
