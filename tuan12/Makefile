@@ -10,7 +10,7 @@ client:
 
 server:
 	$(JAVAC) $(SERVER_SRC)
-	$(JAVAR) ./Server/Server
+	$(JAVAR) Server/Server
 
 clean:
 	rm -f ./Client/*.class
