@@ -6,11 +6,13 @@ SERVER_SRC = Server/Server.java
 
 client: 
 	$(JAVAC) $(CLIENT_SRC)
-	$(JAVAR) Client/Client
+	$(JAVAR) -cp Client Client
+	rm -f Client/client.class
 
 server:
 	$(JAVAC) $(SERVER_SRC)
-	$(JAVAR) Server/Server
+	$(JAVAR) -cp Server Server
+	rm -f Server/server.class
 
 clean:
 	rm -f ./Client/*.class
