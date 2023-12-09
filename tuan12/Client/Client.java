@@ -5,7 +5,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Client {
-  static void main(String[] args) {
+  public static void main(String[] args) {
     String username = "";
     try {
       final int serverPort = 12345; // Port number
@@ -13,19 +13,19 @@ public class Client {
       String inputServerIp;
       Socket socket = null;
 
-      // do {
-      // System.out.print("Enter server IP: ");
+      do {
+        System.out.print("Enter server IP: ");
 
-      // // Read user input
-      // inputServerIp = scanner.nextLine().toLowerCase();
+        // Read user input
+        inputServerIp = scanner.nextLine().toLowerCase();
 
-      // if (isValidIPAddress(inputServerIp)) {
-      // break;
-      // } else {
-      // System.out.println("Invalid IP address!");
-      // }
+        if (isValidIPAddress(inputServerIp)) {
+          break;
+        } else {
+          System.out.println("Invalid IP address!");
+        }
 
-      // } while (true);
+      } while (true);
 
       socket = new Socket("127.0.0.1", serverPort);
 
