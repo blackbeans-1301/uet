@@ -1,59 +1,113 @@
-package Client;
-
 import java.io.*;
 import java.net.*;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Client {
-
-  public static void main(String[] args) {
+  static void main(String[] args) {
+    String username = "";
     try {
-      BufferedReader userInput = new BufferedReader(
-        new InputStreamReader(System.in)
-      );
+      final int serverPort = 12345; // Port number
+      Scanner scanner = new Scanner(System.in);
+      String inputServerIp;
+      Socket socket = null;
 
+      // do {
       // System.out.print("Enter server IP: ");
-      // String serverIP = userInput.readLine();
 
-      Socket socket = new Socket("127.0.0.1", 12345);
-      BufferedReader reader = new BufferedReader(
-        new InputStreamReader(socket.getInputStream())
-      );
-      PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+      // // Read user input
+      // inputServerIp = scanner.nextLine().toLowerCase();
 
-      String command;
+      // if (isValidIPAddress(inputServerIp)) {
+      // break;
+      // } else {
+      // System.out.println("Invalid IP address!");
+      // }
+
+      // } while (true);
+
+      socket = new Socket("127.0.0.1", serverPort);
+
+      // Create input and output streams
+      DataInputStream in = new DataInputStream(socket.getInputStream());
+      DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+
+      System.out.println("Connected to the server.");
+
       while (true) {
-        System.out.print("Enter command (login/message/logout): ");
-        command = userInput.readLine();
+        String message;
 
-        switch (command) {
-          case "login":
-            System.out.print("Enter username: ");
-            String username = userInput.readLine();
-            writer.println("login/" + username);
-            break;
-          case "message":
-            System.out.print("Enter receiver ID: ");
-            String receiverID = userInput.readLine();
-            System.out.print("Enter message: ");
-            String message = userInput.readLine();
-            writer.println("message/" + receiverID + "/" + message);
-            break;
-          case "logout":
-            // Gửi lệnh logout và kết thúc vòng lặp
-            writer.println("logout");
-            socket.close();
-            return;
-          default:
-            System.out.println("Invalid command");
-            continue;
+        message = scanner.nextLine().toLowerCase();
+
+        if (message.equals("login")) {
+          handleLogin(scanner, in, out);
+          continue;
+        } else {
+          switch (message) {
+            case "message":
+              handleChat(username, scanner, in, out);
+              continue;
+            case "logout":
+              System.out.println("Logging out...");
+              out.writeUTF("logout/" + username);
+              System.out.println("Server: " + in.readUTF());
+              break;
+            default:
+              break;
+          }
+          continue;
         }
-
-        // Đọc và in ra phản hồi từ máy chủ
-        String response = reader.readLine();
-        System.out.println("Server response: " + response);
       }
-    } catch (IOException e) {
-      e.printStackTrace();
+
+    } catch (Exception e) {
     }
+  }
+
+  private static void handleChat(String username, Scanner scanner, DataInputStream in, DataOutputStream out) {
+    String receiverId = "";
+    String message = "";
+
+    System.out.print("Enter receiver ID: ");
+    receiverId = scanner.nextLine().toLowerCase();
+
+    System.out.print("Enter message: ");
+    message = scanner.nextLine().toLowerCase();
+
+    try {
+      out.writeUTF("message/" + username + "/" + receiverId + "/" + message);
+      String response = in.readUTF();
+
+      System.out.println("Server: " + response);
+    } catch (Exception e) {
+    }
+  }
+
+  private static String handleLogin(Scanner scanner, DataInputStream in, DataOutputStream out) {
+    System.out.println("Connected to the server.");
+    String username = scanner.nextLine().toLowerCase();
+
+    try {
+      out.writeUTF("login " + username);
+      String response = in.readUTF();
+
+      System.out.println("Server" + response);
+
+      if (response.contains("200")) {
+        return username;
+      } else {
+        return "";
+      }
+    } catch (Exception e) {
+      return "";
+    }
+  }
+
+  private static boolean isValidIPAddress(String ipAddress) {
+    String regex = "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
+    Pattern pattern = Pattern.compile(regex);
+    Matcher matcher = pattern.matcher(ipAddress);
+
+    return matcher.matches();
   }
 }
