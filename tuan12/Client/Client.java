@@ -15,19 +15,19 @@ public class Client {
       String inputServerIp;
       Socket socket = null;
 
-      // do {
-      // System.out.print("Enter server IP: ");
+      do {
+        System.out.print("Enter server IP: ");
 
-      // // Read user input
-      // inputServerIp = scanner.nextLine().toLowerCase();
+        // Read user input
+        inputServerIp = scanner.nextLine().toLowerCase();
 
-      // if (isValidIPAddress(inputServerIp)) {
-      // break;
-      // } else {
-      // System.out.println("Invalid IP address!");
-      // }
+        if (isValidIPAddress(inputServerIp)) {
+          break;
+        } else {
+          System.out.println("Invalid IP address!");
+        }
 
-      // } while (true);
+      } while (true);
 
       socket = new Socket("127.0.0.1", serverPort);
 
@@ -145,7 +145,7 @@ class HandleServerResponse extends Thread {
                 if (status.equals("200")) {
                   System.out.println("Message sent successfully!");
                 } else if (status.equals("201")) {
-                  continue;
+                  System.out.print("\nEnter your command(login/logout/message): ");
                 } else {
                   System.out.println("Message sent failed!");
                 }

@@ -197,10 +197,13 @@ class ClientHandler implements Runnable {
                     break;
                   } else {
                     Server.setUserStatus(reqUsername, true);
+                    out.writeUTF(
+                        "login:200:" + reqUsername + ":login OK, active users: " + activeUsers);
                   }
                 } else {
                   Server.addUser(reqUsername, this.clientSocket);
-                  out.writeUTF("login:200:" + reqUsername + " signed up a new user and login OK, active users: " + activeUsers);
+                  out.writeUTF(
+                      "login:200:" + reqUsername + ":signed up a new user and login OK, active users: " + activeUsers);
                 }
 
                 Server.sendActiveUsers();
@@ -235,8 +238,7 @@ class ClientHandler implements Runnable {
               Server.setUserStatus(this.username, false);
               out.writeUTF("logout:200: LOGOUT OK");
               clientSocket.close();
-
-              break;
+              return;
             default:
               out.writeUTF("command:200: Bad Request");
               break;
