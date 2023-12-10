@@ -1,5 +1,3 @@
-package Server;
-
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
@@ -33,14 +31,18 @@ public class Server {
     return users;
   }
 
-  public static List<String> getActiveUsers() {
+  public static String getActiveUsers() {
     List<String> activeUsers = new ArrayList<>();
     for (UserData user : users) {
       if (user.isOnline()) {
         activeUsers.add(user.getUserId());
       }
     }
-    return activeUsers;
+
+    String activeUsersByString = "[" + String.join(", ", activeUsers) + "]";
+    System.out.println("Active users: " + activeUsersByString);
+
+    return activeUsersByString;
   }
 
   public static boolean isUserExisted(String username) {
@@ -81,13 +83,19 @@ public class Server {
     }
   }
 
-  public static void sendMessage(String sender, String receiver, String message) {
+  public static boolean sendMessage(String sender, String receiver, String message) {
     for (UserData user : users) {
       if (user.getUserId().equals(receiver)) {
-        PrintWriter writer = user.createWriter();
-        writer.println("200 " + message + " FROM " + sender);
+        try {
+          DataOutputStream out = new DataOutputStream(user.getSocket().getOutputStream());
+          out.writeUTF("message:200: Send" + message + " FROM " + sender);
+          return true;
+        } catch (Exception e) {
+          return false;
+        }
       }
     }
+    return false;
   }
 }
 
@@ -127,20 +135,23 @@ class UserData {
   public void setUserSocket(Socket userSocket) {
     this.socket = userSocket;
   }
+
+  public Socket getSocket() {
+    return socket;
+  }
 }
 
 class ClientHandler implements Runnable {
   private Socket clientSocket;
-  private BufferedReader reader;
-  private PrintWriter writer;
+  private DataInputStream in;
+  private DataOutputStream out;
   private String username;
 
   public ClientHandler(Socket socket) {
     try {
       this.clientSocket = socket;
-      this.reader = new BufferedReader(
-          new InputStreamReader(clientSocket.getInputStream()));
-      this.writer = new PrintWriter(clientSocket.getOutputStream(), true);
+      this.in = new DataInputStream(clientSocket.getInputStream());
+      this.out = new DataOutputStream(clientSocket.getOutputStream());
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -148,10 +159,13 @@ class ClientHandler implements Runnable {
 
   @Override
   public void run() {
+    System.out.println("Start handle client request...");
+
     try {
       while (true) {
         String clientRequest;
-        clientRequest = reader.readLine();
+        clientRequest = in.readUTF();
+        System.out.println("Client request: " + clientRequest);
 
         // Xử lý yêu cầu từ client
         String[] request = clientRequest.split("/");
@@ -161,23 +175,24 @@ class ClientHandler implements Runnable {
             case "login":
               if (request.length > 1) {
                 String reqUsername = request[1];
+                String activeUsers = Server.getActiveUsers();
 
                 if (Server.isUserExisted(reqUsername)) {
                   if (Server.isUserOnline(reqUsername)) {
-                    writer.println("400 User is already logged in");
+                    out.writeUTF("login:400: User is already logged in");
                     break;
                   } else {
                     Server.setUserStatus(reqUsername, true);
                   }
                 } else {
                   Server.addUser(reqUsername, this.clientSocket);
+                  out.writeUTF("login:200: signed up a new user and login OK, active users: " + activeUsers);
                 }
 
                 this.username = reqUsername;
 
-                writer.println("200 LOGIN OK");
               } else {
-                writer.println("400 Bad Request");
+                out.writeUTF("login:400: Bad Request");
               }
               break;
             case "message":
@@ -185,22 +200,29 @@ class ClientHandler implements Runnable {
                 String fromUserID = request[1];
                 String receiverID = request[2];
                 String messageContent = request[3];
-                // Xử lý tin nhắn và gửi lại phản hồi
-                // Ví dụ: gửi tin nhắn đến receiverID và trả về phản hồi
-                String response = "200 " + messageContent + " FROM " + fromUserID;
-                writer.println(response);
+
+                boolean sendSuccessfully = Server.sendMessage(fromUserID, receiverID, messageContent);
+
+                String responseToClient = "";
+                if (sendSuccessfully) {
+                  responseToClient = "message:200: send message to" + receiverID + " successfully";
+                } else {
+                  responseToClient = "message:200: send message to " + receiverID
+                      + " error, user is offline or not existed";
+                }
+                out.writeUTF(responseToClient);
               } else {
-                writer.println("400 Bad Request");
+                out.writeUTF("message:400: Bad Request");
               }
               break;
             case "logout":
               Server.setUserStatus(this.username, false);
-              writer.println("200 LOGOUT OK");
+              out.writeUTF("logout:200: LOGOUT OK");
               clientSocket.close();
 
               break;
             default:
-              writer.println("400 Bad Request");
+              out.writeUTF("command:200: Bad Request");
               break;
           }
         }
