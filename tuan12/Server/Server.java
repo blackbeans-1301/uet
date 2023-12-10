@@ -76,10 +76,11 @@ public class Server {
     return false;
   }
 
-  public static void setUserStatus(String username, boolean isOnline) {
+  public static void setUserStatus(String username, boolean isOnline, Socket socket) {
     for (UserData user : users) {
       if (user.getUserId().equals(username)) {
         user.setOnline(isOnline);
+        user.setUserSocket(socket);
       }
     }
   }
@@ -97,7 +98,6 @@ public class Server {
   }
 
   public static boolean sendMessage(String sender, String receiver, String message) {
-    System.out.println(sender);
     for (UserData user : users) {
       if (user.getUserId().equals(receiver)) {
         try {
@@ -173,8 +173,6 @@ class ClientHandler implements Runnable {
 
   @Override
   public void run() {
-    System.out.println("Start handle client request...");
-
     try {
       while (true) {
         String clientRequest;
@@ -196,7 +194,7 @@ class ClientHandler implements Runnable {
                     out.writeUTF("login:400: User is already logged in");
                     break;
                   } else {
-                    Server.setUserStatus(reqUsername, true);
+                    Server.setUserStatus(reqUsername, true, this.clientSocket);
                     out.writeUTF(
                         "login:200:" + reqUsername + ":login OK, active users: " + activeUsers);
                   }
@@ -224,9 +222,9 @@ class ClientHandler implements Runnable {
 
                 String responseToClient = "";
                 if (sendSuccessfully) {
-                  responseToClient = "message:200: send message to" + receiverID + " successfully";
+                  responseToClient = "message:200: send message to " + receiverID + " successfully";
                 } else {
-                  responseToClient = "message:200: send message to " + receiverID
+                  responseToClient = "message:400: send message to " + receiverID
                       + " error, user is offline or not existed";
                 }
                 out.writeUTF(responseToClient);
@@ -235,7 +233,7 @@ class ClientHandler implements Runnable {
               }
               break;
             case "logout":
-              Server.setUserStatus(this.username, false);
+              Server.setUserStatus(this.username, false, null);
               out.writeUTF("logout:200: LOGOUT OK");
               clientSocket.close();
               return;
