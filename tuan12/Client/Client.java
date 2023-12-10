@@ -43,7 +43,7 @@ public class Client {
 
       while (true) {
         Thread.sleep(500);
-        System.out.print("Enter your command(login/logout/message): ");
+        System.out.print("\nEnter your command(login/logout/message): ");
         String message;
         message = scanner.nextLine().toLowerCase();
 
@@ -144,6 +144,8 @@ class HandleServerResponse extends Thread {
                 String status = request[1];
                 if (status.equals("200")) {
                   System.out.println("Message sent successfully!");
+                } else if (status.equals("201")) {
+                  continue;
                 } else {
                   System.out.println("Message sent failed!");
                 }

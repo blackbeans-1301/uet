@@ -31,6 +31,19 @@ public class Server {
     return users;
   }
 
+  public static void sendActiveUsers() {
+    for (UserData user : users) {
+      if (user.isOnline()) {
+        try {
+          DataOutputStream out = user.createOutputStream();
+          out.writeUTF("activeUsers:200: " + getActiveUsers());
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      }
+    }
+  }
+
   public static String getActiveUsers() {
     List<String> activeUsers = new ArrayList<>();
     for (UserData user : users) {
@@ -84,11 +97,12 @@ public class Server {
   }
 
   public static boolean sendMessage(String sender, String receiver, String message) {
+    System.out.println(sender);
     for (UserData user : users) {
       if (user.getUserId().equals(receiver)) {
         try {
           DataOutputStream out = new DataOutputStream(user.getSocket().getOutputStream());
-          out.writeUTF("message:200: Send" + message + " FROM " + sender);
+          out.writeUTF("message:201: " + message + " FROM " + sender);
           return true;
         } catch (Exception e) {
           return false;
@@ -110,10 +124,10 @@ class UserData {
     this.socket = clientSocket;
   }
 
-  public PrintWriter createWriter() {
+  public DataOutputStream createOutputStream() {
     try {
-      PrintWriter writer = new PrintWriter(this.socket.getOutputStream(), true);
-      return writer;
+      DataOutputStream out = new DataOutputStream(this.socket.getOutputStream());
+      return out;
     } catch (IOException e) {
       e.printStackTrace();
       return null;
@@ -186,8 +200,10 @@ class ClientHandler implements Runnable {
                   }
                 } else {
                   Server.addUser(reqUsername, this.clientSocket);
-                  out.writeUTF("login:200: signed up a new user and login OK, active users: " + activeUsers);
+                  out.writeUTF("login:200:" + reqUsername + " signed up a new user and login OK, active users: " + activeUsers);
                 }
+
+                Server.sendActiveUsers();
 
                 this.username = reqUsername;
 
